@@ -1,4 +1,4 @@
-# streamlit_app.py - Updated for your GitHub repository
+# streamlit_app.py - Updated with cleaner loading and credits
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -12,6 +12,7 @@ from io import StringIO
 import base64
 import urllib.request
 import json
+import time
 
 # Set page configuration
 st.set_page_config(
@@ -55,6 +56,22 @@ st.markdown("""
         color: white;
         font-weight: bold;
     }
+    .credits {
+        background-color: #1E293B;
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-top: 2rem;
+        text-align: center;
+    }
+    .social-links a {
+        color: #60A5FA;
+        text-decoration: none;
+        margin: 0 10px;
+    }
+    .social-links a:hover {
+        text-decoration: underline;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -65,78 +82,71 @@ Predict tensile strength of composite materials using machine learning models tr
 Upload your data or use the interactive controls below.
 """)
 
-# Load models from GitHub
+# Initialize session state for loading status
+if 'models_loaded' not in st.session_state:
+    st.session_state.models_loaded = False
+if 'artifacts' not in st.session_state:
+    st.session_state.artifacts = None
+
+# Load models from GitHub with progress indicator
 @st.cache_resource
 def load_models_from_github():
     """Load models from GitHub repository"""
-    try:
-        # GitHub raw URLs - UPDATE THESE WITH YOUR ACTUAL REPO URL
-        github_username = "Areebrizz"
-        repo_name = "Material-Property-Prediction-using-ML"
-        branch = "main"  # or "master"
-        
-        base_url = f"https://raw.githubusercontent.com/{github_username}/{repo_name}/{branch}/"
-        
-        st.info(f"🔄 Loading models from: {base_url}")
-        
-        # Load each model file individually
-        model_files = {
-            'artifacts': 'model_artifacts.pkl',
-            'scaler': 'scaler.pkl',
-            'lr_model': 'linear_regression_model.pkl',
-            'nn_model': 'neural_network_model.pkl',
-            'feature_names': 'feature_names.pkl'
-        }
-        
-        artifacts = {}
-        
-        # Try to load the combined artifacts first
+    # Show loading indicator
+    with st.spinner('🔄 Loading ML models from GitHub...'):
         try:
-            artifacts_url = base_url + model_files['artifacts']
-            with urllib.request.urlopen(artifacts_url) as response:
-                artifacts = joblib.load(response)
-            st.success("✅ Models loaded successfully from combined artifacts file!")
+            # GitHub raw URLs
+            github_username = "Areebrizz"
+            repo_name = "Material-Property-Prediction-using-ML"
+            branch = "main"
             
-        except Exception as e:
-            st.warning(f"⚠️ Could not load combined artifacts: {e}")
-            st.info("Trying to load individual model files...")
+            base_url = f"https://raw.githubusercontent.com/{github_username}/{repo_name}/{branch}/"
             
-            # Load individual files
+            artifacts = {}
+            
+            # Try to load the combined artifacts first
             try:
+                artifacts_url = base_url + 'model_artifacts.pkl'
+                with urllib.request.urlopen(artifacts_url) as response:
+                    artifacts = joblib.load(response)
+                
+            except Exception as e:
+                # Load individual files
                 # Load scaler
-                scaler_url = base_url + model_files['scaler']
+                scaler_url = base_url + 'scaler.pkl'
                 with urllib.request.urlopen(scaler_url) as response:
                     artifacts['scaler'] = joblib.load(response)
                 
                 # Load linear regression model
-                lr_url = base_url + model_files['lr_model']
+                lr_url = base_url + 'linear_regression_model.pkl'
                 with urllib.request.urlopen(lr_url) as response:
                     artifacts['lr_model'] = joblib.load(response)
                 
                 # Load neural network model
-                nn_url = base_url + model_files['nn_model']
+                nn_url = base_url + 'neural_network_model.pkl'
                 with urllib.request.urlopen(nn_url) as response:
                     artifacts['nn_model'] = joblib.load(response)
                 
                 # Load feature names
-                features_url = base_url + model_files['feature_names']
+                features_url = base_url + 'feature_names.pkl'
                 with urllib.request.urlopen(features_url) as response:
                     artifacts['feature_names'] = pickle.load(response)
-                
-                st.success("✅ Individual model files loaded successfully!")
-                
-            except Exception as e2:
-                st.error(f"❌ Error loading individual files: {e2}")
-                return None
+            
+            # Store in session state
+            st.session_state.artifacts = artifacts
+            st.session_state.models_loaded = True
+            
+            return artifacts
         
-        return artifacts
-    
-    except Exception as e:
-        st.error(f"❌ Error loading models: {str(e)}")
-        return None
+        except Exception as e:
+            st.error(f"❌ Error loading models: {str(e)}")
+            return None
 
-# Initialize models
-artifacts = load_models_from_github()
+# Initialize models (load once)
+if not st.session_state.models_loaded:
+    artifacts = load_models_from_github()
+else:
+    artifacts = st.session_state.artifacts
 
 if artifacts:
     # Extract models from artifacts
@@ -146,14 +156,19 @@ if artifacts:
     feature_names = artifacts.get('feature_names')
     
     if all([scaler, lr_model, nn_model, feature_names]):
-        st.success("✅ All models loaded successfully!")
+        # Success message that disappears quickly
+        success_placeholder = st.empty()
+        with success_placeholder:
+            success = st.success('✅ All models loaded successfully!')
+            time.sleep(2)  # Show for 2 seconds
+        success_placeholder.empty()  # Remove the message
         
-        # Sidebar
+        # Sidebar with credits at the bottom
         with st.sidebar:
             st.markdown("## 🔧 Navigation")
             app_mode = st.radio(
                 "Choose Mode:",
-                ["🏠 Home", "📊 Manual Input", "📁 File Upload", "📈 Model Analysis", "ℹ️ About"]
+                ["🏠 Home", "📊 Manual Input", "📁 File Upload", "📈 Model Analysis", "ℹ️ About & Credits"]
             )
             
             st.markdown("---")
@@ -173,6 +188,12 @@ if artifacts:
             with st.expander("📊 Model Information"):
                 st.write(f"**Features used:** {len(feature_names)}")
                 st.write(f"**Neural Network Layers:** {nn_model.hidden_layer_sizes}")
+            
+            # Credits in sidebar (small version)
+            st.markdown("---")
+            st.markdown("### 👨‍💻 Developer")
+            st.markdown("**Muhammad Areeb Rizwan Siddiqui**")
+            st.markdown("*Mechanical Engineer & Automation Specialist*")
         
         # Main content based on selected mode
         if app_mode == "🏠 Home":
@@ -183,7 +204,7 @@ if artifacts:
             based on their composition and processing parameters.
             
             ### How to Use:
-            1. **Manual Input**: Adjust sliders for each parameter in the Manual Input section
+            1. **Manual Input**: Adjust values for each parameter in the Manual Input section
             2. **File Upload**: Upload a CSV file with multiple samples
             3. **Get Predictions**: Choose your model and get instant predictions
             4. **Download Results**: Export your predictions for further analysis
@@ -200,6 +221,11 @@ if artifacts:
             with st.expander("📋 Features Used in Model"):
                 for i, feature in enumerate(feature_names, 1):
                     st.write(f"{i}. {feature}")
+            
+            # Quick prediction section
+            st.markdown("---")
+            st.markdown("### 🚀 Quick Start")
+            st.markdown("Go to **Manual Input** section to make your first prediction!")
         
         elif app_mode == "📊 Manual Input":
             st.markdown('<h2 class="sub-header">Manual Parameter Input</h2>', unsafe_allow_html=True)
@@ -393,54 +419,96 @@ if artifacts:
             for feature in feature_names:
                 st.write(f"- {feature}")
         
-        elif app_mode == "ℹ️ About":
+        elif app_mode == "ℹ️ About & Credits":
+            col1, col2 = st.columns([2, 1])
+            
+            with col1:
+                st.markdown("""
+                ## About This Project
+                
+                ### Purpose
+                This application predicts the tensile strength of composite materials based on their
+                composition and processing parameters using machine learning models.
+                
+                ### Technology Stack
+                - **Frontend**: Streamlit for interactive web interface
+                - **ML Models**: Scikit-learn (Linear Regression, Neural Network)
+                - **Data Processing**: Pandas, NumPy
+                - **Visualization**: Plotly
+                - **Deployment**: Streamlit Cloud
+                
+                ### Repository
+                Find the complete source code on GitHub:
+                [github.com/Areebrizz/Material-Property-Prediction-using-ML](https://github.com/Areebrizz/Material-Property-Prediction-using-ML)
+                """)
+            
+            with col2:
+                st.markdown("""
+                ## 🏆 Credits
+                
+                **Developed by:**
+                ### Muhammad Areeb Rizwan Siddiqui
+                
+                **Mechanical Engineer**  
+                **Automation Specialist**  
+                **Digital Manufacturing Enthusiast**
+                """)
+            
+            # Full credits section
+            st.markdown("---")
+            st.markdown('<div class="credits">', unsafe_allow_html=True)
+            st.markdown("### 👨‍💻 About the Developer")
             st.markdown("""
-            ## About This Project
+            **Muhammad Areeb Rizwan Siddiqui** is a passionate mechanical engineer with expertise in 
+            automation, digital manufacturing, and machine learning applications in materials science.
             
-            ### Purpose
-            This application predicts the tensile strength of composite materials based on their
-            composition and processing parameters using machine learning models.
-            
-            ### Technology Stack
-            - **Frontend**: Streamlit for interactive web interface
-            - **ML Models**: Scikit-learn (Linear Regression, Neural Network)
-            - **Data Processing**: Pandas, NumPy
-            - **Visualization**: Plotly
-            - **Deployment**: Streamlit Cloud
-            
-            ### Repository
-            Find the complete source code on GitHub:
-            [github.com/Areebrizz/Material-Property-Prediction-using-ML](https://github.com/Areebrizz/Material-Property-Prediction-using-ML)
-            
-            ---
-            
-            *Developed for composite material research and analysis*
+            Combining traditional engineering principles with modern data science techniques to solve 
+            complex material property prediction challenges.
             """)
+            
+            st.markdown("### 🔗 Connect with Me")
+            st.markdown('<div class="social-links">', unsafe_allow_html=True)
+            st.markdown("""
+            📧 **Email**: areeb.rizwan@example.com  
+            🔗 **LinkedIn**: [www.linkedin.com/in/areebrizwan](https://www.linkedin.com/in/areebrizwan)  
+            🌐 **Website**: [areebrizwan.com](https://areebrizwan.com)  
+            💼 **GitHub**: [github.com/Areebrizz](https://github.com/Areebrizz)
+            """)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            st.markdown("""
+            ---
+            *This project combines materials engineering with machine learning to enable 
+            faster, data-driven material design decisions.*
+            """)
+            st.markdown('</div>', unsafe_allow_html=True)
     
     else:
         st.error("Some models failed to load. Please check your model files.")
 else:
-    st.error("""
-    ## Models Not Loaded
-    
-    Please ensure:
-    1. The model files are in your GitHub repository
-    2. The files are in the main branch
-    3. The repository is public (or you have access if private)
-    
-    ### Files needed in GitHub:
-    - model_artifacts.pkl
-    - scaler.pkl
-    - linear_regression_model.pkl
-    - neural_network_model.pkl
-    - feature_names.pkl
-    
-    ### Quick Fix:
-    1. Go to your GitHub repository
-    2. Make sure all .pkl files are in the main branch
-    3. Update and deploy this Streamlit app
-    """)
+    # Only show error if models truly failed to load
+    if st.session_state.models_loaded == False:
+        st.error("""
+        ## Models Not Loaded
+        
+        Please ensure:
+        1. The model files are in your GitHub repository
+        2. The files are in the main branch
+        3. The repository is public
+        
+        ### Files needed in GitHub:
+        - model_artifacts.pkl
+        - scaler.pkl
+        - linear_regression_model.pkl
+        - neural_network_model.pkl
+        - feature_names.pkl
+        """)
 
-# Footer
+# Footer with minimal credits
 st.markdown("---")
-st.caption("Composite Material Tensile Strength Predictor Dashboard | Built with Streamlit")
+st.markdown("""
+<div style="text-align: center; color: #666; font-size: 0.9rem;">
+    <p>Composite Material Tensile Strength Predictor | Built with Streamlit</p>
+    <p>Developed by Muhammad Areeb Rizwan Siddiqui • Mechanical Engineer & Automation Specialist</p>
+</div>
+""", unsafe_allow_html=True)
