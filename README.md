@@ -125,7 +125,7 @@ The model utilizes 9 critical material parameters:
 
 * 📧 **Email**: [engr.areebriz@gmail.com](mailto:engr.areebriz@gmail.com)
 * 🔗 **LinkedIn**: [areebrizwan](https://linkedin.com/in/areebrizwan)
-* 💼 **Website**: [Areebrizz](https://www.areebrizwan.com)
+* 💼 **Website**: [www.areebrizwan.com](https://www.areebrizwan.com)
 
 ---
 
