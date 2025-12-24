@@ -124,7 +124,7 @@ The model utilizes 9 critical material parameters:
 **Muhammad Areeb Rizwan Siddiqui** *Mechanical Engineer & Machine Learning Specialist*
 
 * 📧 **Email**: [engr.areebriz@gmail.com](mailto:engr.areebriz@gmail.com)
-* 🔗 **LinkedIn**: [areebrizwan](https://linkedin.com/in/areebrizwan)
+* 🔗 **LinkedIn**: [Engr. Areeb Rizwan](https://linkedin.com/in/areebrizwan)
 * 💼 **Website**: [www.areebrizwan.com](https://www.areebrizwan.com)
 
 ---
