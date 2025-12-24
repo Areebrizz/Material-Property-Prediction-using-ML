@@ -469,7 +469,7 @@ if artifacts:
             st.markdown("### 🔗 Connect with Me")
             st.markdown('<div class="social-links">', unsafe_allow_html=True)
             st.markdown("""
-            📧 **Email**: areeb.rizwan@example.com  
+            📧 **Email**: engr.areebriz@gmail.com  
             🔗 **LinkedIn**: [www.linkedin.com/in/areebrizwan](https://www.linkedin.com/in/areebrizwan)  
             🌐 **Website**: [areebrizwan.com](https://areebrizwan.com)  
             💼 **GitHub**: [github.com/Areebrizz](https://github.com/Areebrizz)
