@@ -136,9 +136,3 @@ This project is licensed under the MIT License - see the [LICENSE](https://www.g
 ---
 
 **Built with ❤️ by Muhammad Areeb Rizwan Siddiqui**
-
-```
-
-Would you like me to help you generate the `requirements.txt` file or create a sample `LICENSE` file for this repository?
-
-```
